@@ -79,6 +79,26 @@ static void find_servos(void)
     }
 }
 
+// Look again for servos that didn't answer at startup (late power-up, loose plug). Newly found
+// servos get their angle limits opened and are left limp. Returns how many were found.
+static int find_late_servos(void)
+{
+    int found = 0;
+    for (int leg = 0; leg < NUM_LEGS; leg++) {
+        for (int j = 0; j < JOINTS_PER_LEG; j++) {
+            uint8_t got;
+            if (s_present[leg][j] || servo_read_id(id_of(leg, j), &got) != ESP_OK) continue;
+            s_present[leg][j] = true;
+            servo_write_angle_limit(id_of(leg, j), 0, SERVO_POS_MAX);
+            vTaskDelay(pdMS_TO_TICKS(20));
+            servo_set_torque(id_of(leg, j), false);
+            ESP_LOGI(TAG, "%-8s ID %u: found (late)", joint_name(leg, j), id_of(leg, j));
+            found++;
+        }
+    }
+    return found;
+}
+
 // A limit left over from an earlier calibration would stop the servo short, so open it up
 // for calibrating. legs_init() sets the real limits in the normal app.
 static void open_angle_limits(void)
@@ -132,8 +152,14 @@ static void run_read(void)
                   "joint positive and flip joint_cal[].sign where 'deg' goes down");
 
     char line[160];
+    int64_t next_find = 0;
     while (1) {
         vTaskDelay(pdMS_TO_TICKS(READ_PERIOD_MS));
+        int64_t now = esp_timer_get_time() / 1000;
+        if (now >= next_find) {
+            next_find = now + 2000;     // missing servos join within ~2 s
+            find_late_servos();
+        }
         for (int leg = 0; leg < NUM_LEGS; leg++) {
             int len = 0;
             bool any = false;

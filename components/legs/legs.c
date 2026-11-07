@@ -15,12 +15,14 @@ static const char *TAG = "LEGS";
 //         printed angle goes down instead of up, flip the sign.
 // Then confirm with CAL_CHECK.
 const joint_cal_t joint_cal[NUM_LEGS][JOINTS_PER_LEG] = {
-    [LEG_BACK]  = {{.id = 1, .sign = +1, .zero = 505},
-                   {.id = 3, .sign = +1, .zero = 518},
-                   {.id = 2, .sign = +1, .zero = 524}},
-    [LEG_FRONT] = {{.id = 4, .sign = +1, .zero = 500},
-                   {.id = 5, .sign = +1, .zero = 500},
-                   {.id = 6, .sign = +1, .zero = 500}},
+// Back q1 (zero 722) and back q3 (zero 170) are far from 500, so on one side they only reach
+// ~66 and ~41 deg before the servo's 0..1000 window ends. Signs not measured yet.
+    [LEG_BACK]  = {{.id = 1, .sign = +1, .zero = 722},
+                   {.id = 3, .sign = +1, .zero = 492},
+                   {.id = 2, .sign = +1, .zero = 170}},
+    [LEG_FRONT] = {{.id = 4, .sign = +1, .zero = 494},
+                   {.id = 5, .sign = +1, .zero = 404},
+                   {.id = 6, .sign = +1, .zero = 495}},
 };
 
 const char *joint_name(leg_id_t leg, int joint)

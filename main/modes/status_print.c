@@ -39,5 +39,5 @@ void print_legs(void)
 {
     leg_control_state_t l;
     leg_control_get(&l);
-    printf("LEGS %+5.1f %s %d/6 | ", l.angle_deg, l.following ? "RUN " : "HOLD", l.servos);
+    printf("LEGS %3.0f%% %s %d/6 | ", l.pose_pct, l.following ? "RUN " : "HOLD", l.servos);
 }

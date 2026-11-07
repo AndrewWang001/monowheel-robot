@@ -1,8 +1,8 @@
 #pragma once
 
-// Legs from the T8L: left stick up/down (CH3) sets the angle of every leg joint (servo IDs 1-6),
-// -45 deg (stick down) .. 0 (centre) .. +45 deg (stick up), around each joint's zero in legs.c.
-// Same motion as the leg sweep test, but following the stick.
+// Legs from the T8L: left stick up/down (CH3, no spring) blends both legs (servo IDs 1-6) from
+// vertical (stick up, each joint's zero in legs.c) to the standing pose (stick down, STAND_POS
+// in leg_control.c). Every joint moves in a straight line between its two raw positions (no IK).
 //
 // Kill switch (CH5, see rc.h): on KILL or radio loss the legs freeze where they are. On RUN they
 // move slowly to the stick position, then follow it. Servos stay limp until the first RUN.
@@ -13,7 +13,7 @@
 #include <stdbool.h>
 
 typedef struct {
-    float angle_deg;    // angle the legs were last sent to
+    float pose_pct;     // pose last sent: 0 = vertical, 100 = standing
     bool following;     // kill switch in RUN and legs following the stick
     int servos;         // leg servos currently answering (of 6)
 } leg_control_state_t;
