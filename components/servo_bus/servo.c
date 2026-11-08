@@ -11,6 +11,9 @@
 #define CMD_MOVE_STOP            12
 #define CMD_ID_WRITE             13
 #define CMD_ID_READ              14
+#define CMD_ANGLE_OFFSET_ADJUST  17
+#define CMD_ANGLE_OFFSET_WRITE   18
+#define CMD_ANGLE_OFFSET_READ    19
 #define CMD_ANGLE_LIMIT_WRITE    20
 #define CMD_ANGLE_LIMIT_READ     21
 #define CMD_VIN_LIMIT_WRITE      22
@@ -158,6 +161,24 @@ esp_err_t servo_read_pos(uint8_t id, int16_t *pos)
     esp_err_t err = request(id, CMD_POS_READ, d, 2);
     if (err == ESP_OK) *pos = (int16_t)(d[0] | (d[1] << 8)); // signed: may read slightly negative
     return err;
+}
+
+esp_err_t servo_set_offset(uint8_t id, int8_t offset)
+{
+    if (offset > SERVO_OFFSET_MAX) offset = SERVO_OFFSET_MAX;
+    if (offset < -SERVO_OFFSET_MAX) offset = -SERVO_OFFSET_MAX;
+    uint8_t p[1] = {(uint8_t)offset};
+    return send(id, CMD_ANGLE_OFFSET_ADJUST, p, sizeof(p));
+}
+
+esp_err_t servo_save_offset(uint8_t id)
+{
+    return send(id, CMD_ANGLE_OFFSET_WRITE, NULL, 0);
+}
+
+esp_err_t servo_read_offset(uint8_t id, int8_t *offset)
+{
+    return request(id, CMD_ANGLE_OFFSET_READ, (uint8_t *)offset, 1);
 }
 
 esp_err_t servo_read_vin(uint8_t id, uint16_t *mv)

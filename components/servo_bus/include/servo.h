@@ -41,6 +41,14 @@ esp_err_t servo_set_led(uint8_t id, bool on);
 esp_err_t servo_write_id(uint8_t id, uint8_t new_id);
 esp_err_t servo_read_id(uint8_t id, uint8_t *out);
 esp_err_t servo_read_pos(uint8_t id, int16_t *pos);
+
+// Angle offset: shifts the servo's whole 0..1000 window by up to +/-SERVO_OFFSET_MAX (~30 deg).
+// Fine-tuning only, it adds no range. set_offset applies it now (lost at power-off);
+// save_offset stores the applied offset in the servo's memory.
+#define SERVO_OFFSET_MAX 125
+esp_err_t servo_set_offset(uint8_t id, int8_t offset);
+esp_err_t servo_save_offset(uint8_t id);
+esp_err_t servo_read_offset(uint8_t id, int8_t *offset);
 esp_err_t servo_read_vin(uint8_t id, uint16_t *mv);
 esp_err_t servo_read_temp(uint8_t id, uint8_t *deg_c);
 esp_err_t servo_read_vin_limit(uint8_t id, uint16_t *min_mv, uint16_t *max_mv);

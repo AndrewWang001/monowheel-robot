@@ -124,6 +124,44 @@ static void move_joint(int leg, int j, float deg, uint16_t time_ms)
     servo_move(id_of(leg, j), joint_deg_to_pos(leg, j, deg), time_ms);
 }
 
+// Servo angle offsets (-125..125 steps, ~0.24 deg each), so a fitted joint is vertical at exactly
+// 500. The servo drives to (target + offset): a joint vertical at raw 430 needs offset -70.
+// save = false: applied only until power-off, to check by eye in CAL_CENTER first.
+// save = true:  stored in the servo. Servos not listed are set (and saved) back to 0.
+static const struct { uint8_t id; int8_t offset; bool save; } SERVO_OFFSETS[] = {
+// New offset = current offset + (straight reading - 500). Confirmed straight at 500 in CAL_CENTER.
+    {1, -22, true},     // back base:      straight read 478
+    {3, +33, true},     // back shoulder:  straight read 533
+    {2, -27, true},     // back elbow:     straight read 473
+    {4, +10, true},     // front base:     straight read 510
+    {5, -67, true},     // front shoulder: straight read 516 with -70, then 486.5 with -54
+    {6,   0, true},     // front elbow:    straight read 500
+};
+
+static void apply_offsets(void)
+{
+    FOR_EACH_PRESENT(leg, j) {
+        uint8_t id = id_of(leg, j);
+        int8_t want = 0;
+        bool save = true;
+        for (size_t i = 0; i < sizeof(SERVO_OFFSETS) / sizeof(SERVO_OFFSETS[0]); i++) {
+            if (SERVO_OFFSETS[i].id == id) {
+                want = SERVO_OFFSETS[i].offset;
+                save = SERVO_OFFSETS[i].save;
+            }
+        }
+        int8_t cur;
+        if (servo_read_offset(id, &cur) == ESP_OK && cur == want) continue;
+        servo_set_offset(id, want);
+        if (save) {
+            servo_save_offset(id);
+            vTaskDelay(pdMS_TO_TICKS(20));
+        }
+        ESP_LOGW(TAG, "%s (ID %u): servo offset %d%s", joint_name(leg, j), id, want,
+                 save ? " (saved)" : " (TEST, not saved)");
+    }
+}
+
 static void run_center(void)
 {
     enable_position_mode();
@@ -284,6 +322,7 @@ void tool_servo_cal_run(int step)
     ESP_ERROR_CHECK(servo_bus_init(SERVO_UART, SERVO_TX_GPIO, SERVO_RX_GPIO));
     find_servos();
     open_angle_limits();
+    apply_offsets();
 
     switch (step) {
     case CAL_CENTER: run_center(); break;
