@@ -59,40 +59,59 @@ static uint8_t id_of(int leg, int j)
     return joint_cal[leg][j].id;
 }
 
-// Find which of the servos in joint_cal are connected. Blocks until at least one answers.
+#define FIND_TRIES     10     // at startup, keep pinging for up to ~2 s until all servos answer
+
+static void apply_offset(int leg, int j);
+
+// Find which of the servos in joint_cal are connected. Servos can boot slower than the ESP, so
+// keep trying for a bit until all of them answer. Blocks until at least one answers.
 static void find_servos(void)
 {
-    while (1) {
+    int total = NUM_LEGS * JOINTS_PER_LEG;
+    for (int tries = 0;; tries++) {
         int n = 0;
         for (int leg = 0; leg < NUM_LEGS; leg++) {
             for (int j = 0; j < JOINTS_PER_LEG; j++) {
                 uint8_t got;
-                s_present[leg][j] = servo_read_id(id_of(leg, j), &got) == ESP_OK;
-                ESP_LOGI(TAG, "%-8s ID %u: %s", joint_name(leg, j), id_of(leg, j),
-                         s_present[leg][j] ? "found" : "not connected");
+                if (!s_present[leg][j]) s_present[leg][j] = servo_read_id(id_of(leg, j), &got) == ESP_OK;
                 n += s_present[leg][j];
             }
         }
-        if (n) return;
-        ESP_LOGW(TAG, "No servos answering. Check power, wiring and IDs (scan with the leg sweep test)");
-        vTaskDelay(pdMS_TO_TICKS(2000));
+        if (n == total || (n > 0 && tries >= FIND_TRIES)) break;
+        if (n == 0 && tries >= FIND_TRIES && tries % FIND_TRIES == 0) {
+            ESP_LOGW(TAG, "No servos answering. Check power, wiring and IDs (scan with the leg sweep test)");
+        }
+        vTaskDelay(pdMS_TO_TICKS(200));
     }
+    for (int leg = 0; leg < NUM_LEGS; leg++)
+        for (int j = 0; j < JOINTS_PER_LEG; j++)
+            ESP_LOGI(TAG, "%-8s ID %u: %s", joint_name(leg, j), id_of(leg, j),
+                     s_present[leg][j] ? "found" : "NOT REPLYING (will keep checking)");
 }
 
 // Look again for servos that didn't answer at startup (late power-up, loose plug). Newly found
-// servos get their angle limits opened and are left limp. Returns how many were found.
-static int find_late_servos(void)
+// servos get their angle limits opened and their offset checked. powered = true: torque on and
+// drive to CENTER_POS (center mode); false: left limp (read mode). Returns how many were found.
+static int find_late_servos(bool powered)
 {
     int found = 0;
     for (int leg = 0; leg < NUM_LEGS; leg++) {
         for (int j = 0; j < JOINTS_PER_LEG; j++) {
             uint8_t got;
-            if (s_present[leg][j] || servo_read_id(id_of(leg, j), &got) != ESP_OK) continue;
+            uint8_t id = id_of(leg, j);
+            if (s_present[leg][j] || servo_read_id(id, &got) != ESP_OK) continue;
             s_present[leg][j] = true;
-            servo_write_angle_limit(id_of(leg, j), 0, SERVO_POS_MAX);
+            ESP_LOGI(TAG, "%-8s ID %u: found (late)", joint_name(leg, j), id);
+            servo_write_angle_limit(id, 0, SERVO_POS_MAX);
             vTaskDelay(pdMS_TO_TICKS(20));
-            servo_set_torque(id_of(leg, j), false);
-            ESP_LOGI(TAG, "%-8s ID %u: found (late)", joint_name(leg, j), id_of(leg, j));
+            apply_offset(leg, j);
+            if (powered) {
+                servo_set_servo_mode(id);
+                servo_set_torque(id, true);
+                servo_move(id, CENTER_POS, MOVE_MS);
+            } else {
+                servo_set_torque(id, false);
+            }
             found++;
         }
     }
@@ -132,34 +151,40 @@ static const struct { uint8_t id; int8_t offset; bool save; } SERVO_OFFSETS[] = 
 // New offset = current offset + (straight reading - 500). Confirmed straight at 500 in CAL_CENTER.
     {1, -22, true},     // back base:      straight read 478
     {3, +33, true},     // back shoulder:  straight read 533
-    {2, -27, true},     // back elbow:     straight read 473
-    {4, +10, true},     // front base:     straight read 510
-    {5, -67, true},     // front shoulder: straight read 516 with -70, then 486.5 with -54
+    {2,  -2, true},     // back elbow:     straight read 473 with 0, 538 with -27 (gear slipped), then 487 with +11
+    {4, +39, true},     // front base:     straight read 510 with 0, then 529 with +10
+    {5, -58, true},     // front shoulder: straight read 516 with -70, 486.5 with -54, then 509 with -67
     {6,   0, true},     // front elbow:    straight read 500
 };
 
+static void apply_offset(int leg, int j)
+{
+    uint8_t id = id_of(leg, j);
+    int8_t want = 0;
+    bool save = true;
+    for (size_t i = 0; i < sizeof(SERVO_OFFSETS) / sizeof(SERVO_OFFSETS[0]); i++) {
+        if (SERVO_OFFSETS[i].id == id) {
+            want = SERVO_OFFSETS[i].offset;
+            save = SERVO_OFFSETS[i].save;
+        }
+    }
+    int8_t cur;
+    if (servo_read_offset(id, &cur) == ESP_OK && cur == want) {
+        ESP_LOGI(TAG, "%s (ID %u): servo offset %d (already set)", joint_name(leg, j), id, want);
+        return;
+    }
+    servo_set_offset(id, want);
+    if (save) {
+        servo_save_offset(id);
+        vTaskDelay(pdMS_TO_TICKS(20));
+    }
+    ESP_LOGW(TAG, "%s (ID %u): servo offset %d%s", joint_name(leg, j), id, want,
+             save ? " (saved)" : " (TEST, not saved)");
+}
+
 static void apply_offsets(void)
 {
-    FOR_EACH_PRESENT(leg, j) {
-        uint8_t id = id_of(leg, j);
-        int8_t want = 0;
-        bool save = true;
-        for (size_t i = 0; i < sizeof(SERVO_OFFSETS) / sizeof(SERVO_OFFSETS[0]); i++) {
-            if (SERVO_OFFSETS[i].id == id) {
-                want = SERVO_OFFSETS[i].offset;
-                save = SERVO_OFFSETS[i].save;
-            }
-        }
-        int8_t cur;
-        if (servo_read_offset(id, &cur) == ESP_OK && cur == want) continue;
-        servo_set_offset(id, want);
-        if (save) {
-            servo_save_offset(id);
-            vTaskDelay(pdMS_TO_TICKS(20));
-        }
-        ESP_LOGW(TAG, "%s (ID %u): servo offset %d%s", joint_name(leg, j), id, want,
-                 save ? " (saved)" : " (TEST, not saved)");
-    }
+    FOR_EACH_PRESENT(leg, j) apply_offset(leg, j);
 }
 
 static void run_center(void)
@@ -173,6 +198,7 @@ static void run_center(void)
 
     while (1) {
         vTaskDelay(pdMS_TO_TICKS(3000));
+        find_late_servos(true);     // a servo that missed startup joins in and goes to 500
         FOR_EACH_PRESENT(leg, j) {
             servo_move(id_of(leg, j), CENTER_POS, 0); // re-send in case a servo browned out
             int16_t pos;
@@ -196,7 +222,7 @@ static void run_read(void)
         int64_t now = esp_timer_get_time() / 1000;
         if (now >= next_find) {
             next_find = now + 2000;     // missing servos join within ~2 s
-            find_late_servos();
+            find_late_servos(false);
         }
         for (int leg = 0; leg < NUM_LEGS; leg++) {
             int len = 0;

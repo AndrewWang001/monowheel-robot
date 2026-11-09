@@ -1,8 +1,8 @@
 #pragma once
 
-// Drive motors from the T8L: side scroll wheel (CH10) sets forward speed through the ESCs
-// (all the way left = stopped, forward only for now). CH5 is the kill switch: the motors only
-// run while it is in the RUN position, and only become enabled while the wheel is at stop. Stops if the switch goes to KILL or the
+// Drive motors from the T8L: right stick up/down (CH2) sets speed through the ESCs
+// (centre = stopped, up = forward, down = reverse). CH5 is the kill switch: the motors only
+// run while it is in the RUN position, and only become enabled while the stick is centred. Stops if the switch goes to KILL or the
 // radio drops out. Speed is capped at DRIVE_LIMIT_PCT of full throttle.
 //
 // Needs rc_start() to be running. Owns the ESC: don't run alongside another ESC user.

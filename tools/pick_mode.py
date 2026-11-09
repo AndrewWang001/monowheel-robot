@@ -23,7 +23,7 @@ MODE_FILE = os.path.join(REPO, "main", "mode_select.h")
 # The servo ID tool is deliberately NOT listed (see main/modes/tool_servo_set_id.c).
 MODES = [
     ("Drive (default)", "MODE_DRIVE", None,
-     "IMU + controller. CH5 kill switch, CH10 wheel = drive motors, CH7 = legs, CH6 = stand pose, CH3 = stand up."),
+     "IMU + controller. CH5 kill switch, CH2 right stick = drive motors (up fwd, down rev), CH7 = leg poses, CH6 = stand-up (press again to pause)."),
     ("Test: IMU", "MODE_TEST_IMU", None,
      "BNO085 only. Prints roll / pitch / yaw / gyro."),
     ("Test: controller", "MODE_TEST_RC", None,
@@ -33,7 +33,7 @@ MODES = [
     ("Test: motor sweep", "MODE_TEST_MOTOR_SWEEP", None,
      "Drive motor scripted, no controller: slow fwd, slow rev, up to 80%, stop. Clamp the motor!"),
     ("Test: motor + controller", "MODE_TEST_MOTOR_RC", None,
-     "Drive motors from the controller only. CH5 kill switch, CH10 wheel speed, forward only (50% cap)."),
+     "Drive motors from the controller only. CH5 kill switch, CH2 right stick: up forward, down reverse (95% cap)."),
     ("Servo calibration: center", "MODE_TOOL_SERVO_CAL", "CAL_CENTER",
      "Servos go to mid travel (500) and hold. Fit horns in the zero pose. Links OFF."),
     ("Servo calibration: read", "MODE_TOOL_SERVO_CAL", "CAL_READ",

@@ -39,7 +39,6 @@ void print_legs(void)
 {
     leg_control_state_t l;
     leg_control_get(&l);
-    printf("LEGS %-8s ", l.pose ? l.pose : "-");
-    if (l.stand_stage) printf("stand S%d %3.0f%% %s ", l.stand_stage, l.stand_pct, l.stand_armed ? "go  " : "wait");
-    printf("%s %d/6 | ", l.following ? "RUN " : "HOLD", l.servos);
+    printf("LEGS %s %d/%d %-13s %-6s %s %d/6 | ", l.seq, l.step_num, l.steps, l.step, l.status,
+           l.following ? "RUN " : "HOLD", l.servos);
 }

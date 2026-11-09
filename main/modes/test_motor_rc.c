@@ -1,5 +1,5 @@
 // MODE_TEST_MOTOR_RC: drive motor from the controller, nothing else (no IMU, no legs).
-// CH5 kill switch, CH10 scroll wheel = forward speed. See components/drive.
+// CH5 kill switch, CH2 right stick = speed (up forward, down reverse). See components/drive.
 
 #include <stdio.h>
 #include "freertos/FreeRTOS.h"
@@ -19,7 +19,7 @@ void test_motor_rc_run(void)
         rc_get(&rc);
         print_drive();
         if (rc.connected) {
-            printf("CH10 (speed) %4u  CH5 (kill switch) %4u\n", rc.ch[9], rc.ch[4]);
+            printf("CH2 (speed) %4u  CH5 (kill switch) %4u\n", rc.ch[1], rc.ch[4]);
         } else {
             printf("RC no signal\n");
         }

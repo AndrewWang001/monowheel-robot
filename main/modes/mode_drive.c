@@ -1,8 +1,8 @@
 // MODE_DRIVE: the normal firmware. IMU + controller, with the CH5 kill switch over everything:
-//   CH10 (side scroll wheel)  -> both drive motors, forward only (components/drive)
-//   CH7 (left middle switch)  -> legs: up vertical, middle half, down ground (components/leg_control)
-//   CH6 (left top button)     -> legs: press toggles the button pose
-//   CH8 (right middle switch) + CH3 (left stick) -> stand-up in 3 stages from the button pose
+//   CH2 (right stick up/down) -> both drive motors: up forward, down reverse (components/drive)
+//   CH7 (left middle switch)  -> legs: up vertical, middle half, down ground then final (components/leg_control)
+//   CH6 (left top button)     -> legs: press runs the whole stand-up, press again to pause / continue
+//   CH9 (right top button)    -> legs: offset calibration (press, hold legs straight, press again)
 
 #include <stdio.h>
 #include "freertos/FreeRTOS.h"
@@ -14,7 +14,7 @@
 #include "leg_control.h"
 
 #define PRINT_PERIOD_MS 200
-#define PRINT_CHANNELS  10      // CH1-10 (CH10 = scroll wheel speed)
+#define PRINT_CHANNELS  8       // CH1-8 (CH2 = drive speed)
 
 void mode_drive_run(void)
 {
