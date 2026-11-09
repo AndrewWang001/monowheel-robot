@@ -12,6 +12,7 @@
 #define MODE_TEST_MOTOR_SWEEP   5   // drive motor scripted: slow fwd, slow rev, up to 80% (no controller)
 #define MODE_TEST_MOTOR_RC      6   // drive motor from the controller with kill switch, nothing else
 #define MODE_TOOL_SERVO_CAL     7   // leg servo calibration tool (step set by SERVO_CAL_STEP)
+#define MODE_TEST_BALANCE       8   // stationary side balance with the legs: CH8 off/manual/PID, CH10 u / gain
 #define MODE_TOOL_SERVO_SET_ID  99  // DO NOT USE: renumbers a servo. See tool_servo_set_id.c
 
 // Steps for MODE_TOOL_SERVO_CAL (full instructions in tool_servo_cal.c)
@@ -27,6 +28,7 @@ void test_leg_sweep_run(void);
 void test_motor_sweep_run(void);
 void test_motor_rc_run(void);
 void tool_servo_cal_run(int step);
+void test_balance_run(void);
 void tool_servo_set_id_run(void);
 
 // Shared status printing (status_print.c). Each prints one segment of a line, no newline.

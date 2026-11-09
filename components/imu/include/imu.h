@@ -12,6 +12,11 @@
 typedef struct {
     float roll, pitch, yaw;  // deg, game rotation vector (accel + gyro, no magnetometer; yaw drifts)
     float gyro[3];           // deg/s, calibrated
+    // Robot frame (mounting in imu.c), 0 = upright:
+    float lean;              // deg, side to side, + = right (the one the legs balance)
+    float lean_rate;         // deg/s, + = falling right
+    float tilt;              // deg, forward / back (direction of + not checked yet)
+    float tilt_rate;         // deg/s (axis not checked yet)
     uint8_t accuracy;        // orientation accuracy: 0 unreliable .. 3 high
     bool valid;              // false until the first orientation report arrives
 } imu_state_t;
