@@ -51,6 +51,9 @@ void app_main(void)
 #elif APP_MODE == MODE_TEST_BALANCE
     ESP_LOGI(TAG, "Mode: test balance (legs, CH8 off/manual/PID, CH10 u / gain, CH5 kill switch)");
     test_balance_run();
+#elif APP_MODE == MODE_TEST_IK
+    ESP_LOGI(TAG, "Mode: test IK (CH8 joystick/hold/circle, CH1/CH4/CH2 foot x/y/z, CH5 kill switch)");
+    test_ik_run();
 #elif APP_MODE == MODE_TOOL_SERVO_SET_ID
     ESP_LOGW(TAG, "Mode: SERVO SET ID TOOL (renumbers a servo)");
     tool_servo_set_id_run();

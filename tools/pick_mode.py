@@ -30,6 +30,8 @@ MODES = [
      "ELRS receiver only. Prints all 16 channels."),
     ("Test: balance (legs)", "MODE_TEST_BALANCE", None,
      "Stationary side balance. CH5 kill, CH8 down OFF / mid MANUAL (CH10 wheel = lean pose) / up PID (CH10 = gain). Hold the robot!"),
+    ("Test: IK (legs)", "MODE_TEST_IK", None,
+     "Inverse kinematics live. CH5 kill, CH8 down JOYSTICK (CH1 x, CH4 y, CH2 z) / mid HOLD / up CIRCLE demo. Legs in the air!"),
     ("Test: leg sweep", "MODE_TEST_LEG_SWEEP", None,
      "Leg servos IDs 1-6 swing +/-45 deg around their zero. Missing servos are skipped."),
     ("Test: motor sweep", "MODE_TEST_MOTOR_SWEEP", None,

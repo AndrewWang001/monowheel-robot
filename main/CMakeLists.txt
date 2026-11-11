@@ -8,6 +8,7 @@ idf_component_register(SRCS "main.c"
                             "modes/test_motor_rc.c"
                             "modes/tool_servo_cal.c"
                             "modes/test_balance.c"
+                            "modes/test_ik.c"
                             "modes/tool_servo_set_id.c"
                     INCLUDE_DIRS "." "modes"
                     PRIV_REQUIRES imu rc esc drive leg_control servo_bus legs leg_kinematics gait pins
